@@ -2,6 +2,10 @@
 name = "rust_multicodec"
 version = "0.1.0"
 authors = ["Muranyi Sandor <contact@mudlee.hu>"]
+description = "Rust implementation of the multicodec specification."
+repository = "https://github.com/mudlee/rust-multicodec"
+keywords = ["multicodec", "multiformats"]
+license = "AFL-2.0"
 
 [dependencies]
 integer-encoding = "1.0.3"
