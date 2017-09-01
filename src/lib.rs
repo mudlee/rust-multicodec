@@ -30,7 +30,7 @@ mod codec_map;
 /// }
 /// ```
 ///
-pub fn add_prefix<'a>(codec_code: &str, data: &'a [u8]) -> Result<Vec<u8>, &'static str>{
+pub fn add_prefix(codec_code: &str, data: &[u8]) -> Result<Vec<u8>, &'static str> {
     match codec_map::get_decimal_by_code(codec_code) { // getting hex code of the codec
         Some(decimal) => {
             // encoding codec's (as decimal) into a varint
@@ -71,7 +71,7 @@ pub fn add_prefix<'a>(codec_code: &str, data: &'a [u8]) -> Result<Vec<u8>, &'sta
 /// }
 /// ```
 ///
-pub fn get_codec(data: &[u8]) -> Result<Option<String>, &'static str> {
+pub fn get_codec(data: &[u8]) -> Result<Option<&'static str>, &'static str> {
     let decoded:(u64,usize)=u64::decode_var_vec(&Vec::from(data));
     Ok(codec_map::get_code_by_decimal(decoded.0))
 }
