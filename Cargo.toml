@@ -8,5 +8,5 @@ keywords = ["multicodec", "multiformats"]
 license = "AFL-2.0"
 
 [dependencies]
-integer-encoding = "1.0.3"
+integer-encoding = "1.0.5"
 hex-slice = "0.1.0"
