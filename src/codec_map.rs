@@ -1,5 +1,8 @@
-pub fn get_code_by_decimal(decimal: u64) -> Option<&'static str> {
-    match decimal {
+pub fn get_code_by_hex(hex: u64) -> Option<&'static str> {
+    match hex {
+        // non standard multicodec formats, see: https://github.com/multiformats/multicodec/issues/36
+        0xf01 => Some("json"),
+        // standard formats
         0x01 => Some("base1"),
         0x55 => Some("base2"),
         0x07 => Some("base8"),
@@ -163,8 +166,11 @@ pub fn get_code_by_decimal(decimal: u64) -> Option<&'static str> {
     }
 }
 
-pub fn get_decimal_by_code(codec_code:&str) -> Option<u64>{
+pub fn get_hex_by_code(codec_code:&str) -> Option<u64>{
     match codec_code {
+        // non standard multicodec formats, see: https://github.com/multiformats/multicodec/issues/36
+        "json"=>Some(0xf01),
+        // standard formats
         "base1" => Some(0x01),
         "base2" => Some(0x55),
         "base8" => Some(0x07),

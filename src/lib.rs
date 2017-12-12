@@ -1,8 +1,15 @@
 //! This library is a Rust implementation of the https://github.com/multiformats/multicodec project.
 extern crate integer_encoding;
+extern crate serde;
+extern crate serde_json;
 
 mod codec_map;
 
+// TODO: move it to a separated file
+/// Read these:
+/// //https://developers.google.com/protocol-buffers/docs/encoding
+/// https://github.com/multiformats/multicodec
+/// https://github.com/multiformats/unsigned-varint
 mod codec_prefix {
     use codec_map;
     use std::io::Write;
@@ -21,19 +28,20 @@ mod codec_prefix {
     /// extern crate rust_multicodec;
     /// extern crate hex_slice;
     ///
+    /// use rust_multicodec::codec_prefix;
     /// use hex_slice::AsHex;
     /// use std::process;
     ///
     /// fn main(){
     ///     let data="Live long and prosper";
     ///
-    ///     println!("{:X}",rust_multicodec::add_prefix("base1",data.as_bytes()).unwrap().as_hex());
+    ///     println!("{:X}",codec_prefix::add_prefix("base1",data.as_bytes()).unwrap().as_hex());
     ///     // it will print [1 4C 69 76 65 20 6C 6F 6E 67 20 61 6E 64 20 70 72 6F 73 70 65 72]
     /// }
     /// ```
     ///
     pub fn add_prefix(codec_code: &str, data: &[u8]) -> Result<Vec<u8>, &'static str> {
-        match codec_map::get_decimal_by_code(codec_code) { // getting hex code of the codec
+        match codec_map::get_hex_by_code(codec_code) { // getting hex code of the codec
             Some(decimal) => {
                 // encoding codec's (as decimal) into a varint
                 let mut target:Vec<u8>=decimal.encode_var_vec();
@@ -61,21 +69,22 @@ mod codec_prefix {
     /// extern crate rust_multicodec;
     /// extern crate hex_slice;
     ///
+    /// use rust_multicodec::codec_prefix;
     /// use hex_slice::AsHex;
     /// use std::process;
     ///
     /// fn main(){
     ///     let data="Live long and prosper";
     ///
-    ///     let prefixed=rust_multicodec::add_prefix("base1",data.as_bytes()).unwrap();
-    ///     println!("{}",rust_multicodec::get_codec(prefixed.as_slice()).unwrap().unwrap());
+    ///     let prefixed=codec_prefix::add_prefix("base1",data.as_bytes()).unwrap();
+    ///     println!("{}",codec_prefix::get_codec(prefixed.as_slice()).unwrap().unwrap());
     ///     // it will print "base1"
     /// }
     /// ```
     ///
     pub fn get_codec(data: &[u8]) -> Result<Option<&'static str>, &'static str> {
         let decoded:(u64,usize)=u64::decode_var_vec(&Vec::from(data));
-        Ok(codec_map::get_code_by_decimal(decoded.0))
+        Ok(codec_map::get_code_by_hex(decoded.0))
     }
 
     /// Removes the codec prefix and returns the raw data.
@@ -90,14 +99,15 @@ mod codec_prefix {
     /// extern crate rust_multicodec;
     /// extern crate hex_slice;
     ///
+    /// use rust_multicodec::codec_prefix;
     /// use hex_slice::AsHex;
     /// use std::process;
     ///
     /// fn main(){
     ///     let data="Live long and prosper";
     ///
-    ///     let prefixed=rust_multicodec::add_prefix("base1",data.as_bytes()).unwrap();
-    ///     let raw_data=rust_multicodec::remove_prefix(prefixed.as_slice()).unwrap();
+    ///     let prefixed=codec_prefix::add_prefix("base1",data.as_bytes()).unwrap();
+    ///     let raw_data=codec_prefix::remove_prefix(prefixed.as_slice()).unwrap();
     ///     println!("Original data was {:?}", String::from_utf8(raw_data).unwrap())
     ///     // it will print return "Original data was Live long and prosper"
     /// }
@@ -109,33 +119,33 @@ mod codec_prefix {
     }
 }
 
-
-
-pub mod x{
-    pub fn y(){}
-}
-
 pub mod encoding {
     use codec_prefix;
+    use serde_json;
+    use serde::Serialize;
 
-    #[derive(Debug)]
     pub enum Codec {
         JSON
     }
 
-    pub fn encode<T>(codec: Codec, object: &T) -> Result<Vec<u8>,&'static str>{
-        let data="Live long and prosper";
-        println!("{:?}",codec);
-        //add_prefix("json",data.as_bytes());
-        let prefix = match codec {
-            Codec::JSON => codec_prefix::add_prefix("json",data.as_bytes()),
-            _ => Err("No implementation for the given Codec")
-        };
-
-        prefix
+    pub fn encode<T:Serialize>(codec: Codec, object: &T) -> Result<Vec<u8>,&'static str>{
+        match codec {
+            Codec::JSON => {
+                match serde_json::to_string(&object){
+                    Ok(json) => {
+                        match codec_prefix::add_prefix("json",json.as_bytes()){
+                            Ok(prefixed)=>return Ok(prefixed),
+                            Err(err)=>return Err(err)
+                        }
+                    },
+                    _ => Err("Could not serialised the given object to json")
+                }
+            }
+        }
     }
 }
 
+// TODO: add new tests, and fix these
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -143,18 +153,18 @@ mod tests {
     const DATA:&str="Live long and prosper";
 
     #[test]
-    fn works(){
-        let result=add_prefix("utp",DATA.as_bytes());
+    fn prefix_works(){
+        let result=codec_prefix::add_prefix("utp",DATA.as_bytes());
         assert_eq!(result.is_ok(),true);
 
         let prefixed=result.unwrap();
-        assert_eq!(get_codec(prefixed.as_slice()).unwrap().unwrap(),"utp");
-        assert_eq!(remove_prefix(prefixed.as_slice()).unwrap(),DATA.as_bytes());
+        assert_eq!(codec_prefix::get_codec(prefixed.as_slice()).unwrap().unwrap(),"utp");
+        assert_eq!(codec_prefix::remove_prefix(prefixed.as_slice()).unwrap(),DATA.as_bytes());
     }
 
     #[test]
     #[should_panic]
-    fn fails_with_invalid_codec(){
-        add_prefix("invalid_codec",DATA.as_bytes()).unwrap();
+    fn prefix_fails_with_invalid_codec(){
+        codec_prefix::add_prefix("invalid_codec",DATA.as_bytes()).unwrap();
     }
 }

@@ -3,22 +3,14 @@
 //https://github.com/multiformats/unsigned-varint
 
 
-/*
-Van egy block data, mondjuk {"mySecret":"This is my secret"}. Ezt el akarjuk tárolni ilyesmi formában: db.store(key, value), ahol a key egy hash, a value egy encoded formája a secret-nek.
-Kell két module. 1: egy multiencode/decode modul, aminek beadod a block data-t, megmondod, hogy milyen encode-al kodolja el (json, xml, stb.).
-Ő ebből fog csinálni egy ilyesmi formát: <xml><BINARIS_FORMAJA_AZ_XML_E_ALAKITOTT_JSONNAK>.
-A decode része pedig fogja ezt az <xml><...> adatot, és visszaadja egy az egybe és csak kizárólag azt a json-t, amit az első mondatban írtam.
- Tehát két inputja van, egy encode tipus (json, xml, stb.), es maga az adat. Az outputja egy sime string, a fent irt formaban.
- A decode reszenel az input maga ez a string, az outputja pedig az eredeti json.
-
-a kimenetnek nem sztringnek, hanem binarisnak kell lennie, ami szoveges formatum eseten siman a sztring utf-8-al, de lehet bson vagy mas binaris is.
-Az <xml> prefix is egy int ertek, 1 vagy 2 bajton
-*/
-
 extern crate rust_multicodec;
+extern crate serde;
 
 use rust_multicodec::encoding;
 use rust_multicodec::encoding::Codec;
+
+#[macro_use]
+extern crate serde_derive;
 
 mod multicodec {
     /*pub struct DecodeResult {
@@ -60,6 +52,7 @@ mod multicodec {
     }*/*/
 }
 
+#[derive(Serialize, Deserialize)]
 struct Person {
     name: String
 }
@@ -67,13 +60,6 @@ struct Person {
 fn main(){
     let person=Person{name:String::from("sanyi")};
     let result= encoding::encode(Codec::JSON, &person);
-    println!("{:?}",result);
-    // sample usage:
-   /* let encoded:Vec<u8>=multicodec::encode(multicodec::Encoding::json, "any kind of data. bson, json, xml, anything");
-    let decoded:multicodec::DecodeResult=multicodec::decode(encoded);
-
-    decoded.codec; // json
-    decoded.data; // binary version of the "any kind of data. bson, json, xml, anything"
-    decoded.rawData(); // "any kind of data. bson, json, xml, anything"*/
+    println!("encoded: {:?}",result);
 
 }
