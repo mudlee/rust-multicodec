@@ -11,18 +11,20 @@ pub mod encoding {
     use std::str;
     use serde_json;
     use serde::Serialize;
-    use serde::Deserialize;
+    use serde::de::DeserializeOwned;
 
     pub mod codec;
     pub mod codec_map;
 
+    #[derive(Debug)]
+    #[derive(PartialEq)]
     pub enum Codec {
         JSON
     }
 
-    struct DecodeResult<T> {
-        data: T,
-        codec: Codec
+    pub struct DecodeResult<T> {
+        pub data: T,
+        pub codec: Codec
     }
 
     pub fn encode<T:Serialize>(codec: Codec, object: &T) -> Result<Vec<u8>,&'static str>{
@@ -31,33 +33,29 @@ pub mod encoding {
                 match serde_json::to_string(&object){
                     Ok(json) => {
                         match codec::add_prefix("json",json.as_bytes()){
-                            Ok(prefixed)=>return Ok(prefixed),
-                            Err(err)=>return Err(err)
+                            Ok(prefixed)=>Ok(prefixed),
+                            Err(err)=>Err(err)
                         }
                     },
-                    _ => Err("Could not serialised the given object to json")
+                    Err(_) => Err("Could not serialise the given object to json")
                 }
             }
         }
     }
 
-    // TODO: not yet finished, must return DecodeResult
-    pub fn decode(encoded_data:&[u8]) -> Vec<u8>{
-        match codec::get_codec(encoded_data) {
-            Ok(codec_used) => {
-                match codec::remove_prefix(encoded_data){
-                    Ok(wout_prefix) => {
-                        match codec_used.unwrap() {
-                            "json" => {
-                                wout_prefix
-                            },
-                            _ => vec![]
-                        }
-                    },
-                    _ => vec![]
-                }
+    pub fn decode<T:DeserializeOwned>(encoded_data:&[u8]) -> Result<DecodeResult<T>,&'static str>{
+        match codec::get_codec(encoded_data){
+            Some("json")=>{
+                let wout_prefix=codec::remove_prefix(encoded_data).expect("Could not remove codec prefix from the given data");
+                let data=serde_json::from_slice(wout_prefix.as_ref()).expect("Could not deserialize the json object");
+
+                Ok(DecodeResult{
+                    codec:Codec::JSON,
+                    data
+                })
             },
-            _ => vec![]
+            Some(_) => Err("The data was encoded with a codec which is not handled right now"),
+            None=>Err("Could not extract the codec from the given data")
         }
     }
 }
@@ -65,7 +63,7 @@ pub mod encoding {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use encoding::Codec;
+    use encoding::{Codec,DecodeResult};
 
     #[derive(Serialize, Deserialize)]
     struct TestObject {
@@ -78,7 +76,8 @@ mod tests {
         let encoded=encoding::encode(Codec::JSON, &test_object);
         assert_eq!(encoded.is_ok(),true);
 
-        // TODO: finish this
-        encoding::decode(encoded.unwrap().as_ref());
+        let decoded:DecodeResult<TestObject>=encoding::decode(encoded.unwrap().as_ref()).unwrap();
+        assert_eq!(decoded.data.message, test_object.message);
+        assert_eq!(decoded.codec,Codec::JSON);
     }
 }

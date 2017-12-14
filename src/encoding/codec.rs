@@ -64,14 +64,14 @@ pub fn add_prefix(codec_code: &str, data: &[u8]) -> Result<Vec<u8>, &'static str
 ///     let data="Live long and prosper";
 ///
 ///     let prefixed=codec::add_prefix("base1",data.as_bytes()).unwrap();
-///     println!("{}",codec::get_codec(prefixed.as_slice()).unwrap().unwrap());
+///     println!("{}",codec::get_codec(prefixed.as_slice()).unwrap());
 ///     // it will print "base1"
 /// }
 /// ```
 ///
-pub fn get_codec(data: &[u8]) -> Result<Option<&'static str>, &'static str> {
+pub fn get_codec(data: &[u8]) -> Option<&'static str>{
     let decoded:(u64,usize)=u64::decode_var_vec(&Vec::from(data));
-    Ok(codec_map::get_code_by_hex(decoded.0))
+    codec_map::get_code_by_hex(decoded.0)
 }
 
 /// Removes the codec prefix and returns the raw data.
@@ -117,7 +117,7 @@ mod tests {
         assert_eq!(result.is_ok(),true);
 
         let prefixed=result.unwrap();
-        assert_eq!(get_codec(prefixed.as_slice()).unwrap().unwrap(),"utp");
+        assert_eq!(get_codec(prefixed.as_slice()).unwrap(),"utp");
         assert_eq!(remove_prefix(prefixed.as_slice()).unwrap(),DATA.as_bytes());
     }
 

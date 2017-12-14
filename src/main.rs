@@ -4,7 +4,6 @@ extern crate serde_json;
 
 use rust_multicodec::encoding;
 use rust_multicodec::encoding::Codec;
-
 use std::str;
 
 #[macro_use]
@@ -16,14 +15,12 @@ struct Person {
     name: String
 }
 
+/// Working demo
 fn main(){
-    let person=Person{name:String::from("sanyi")};
-    let result= encoding::encode(Codec::JSON, &person);
-    println!("encoded: {:?}",result);
+    let to_be_encoded=Person{name:String::from("sanyi")};
+    let encode_result= encoding::encode(Codec::JSON, &to_be_encoded);
+    println!("encoded: {:?}",encode_result);
 
-    let x=encoding::decode(result.unwrap().as_ref());
-    let person2:Person=serde_json::from_slice(x.as_ref())?;
-
-    println!("decoded: {:?}",person2);
-
+    let decoded:Person=encoding::decode(encode_result.unwrap().as_ref()).unwrap().data;
+    println!("decoded: {:?}",decoded);
 }
