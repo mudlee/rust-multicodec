@@ -30,4 +30,6 @@ fn main(){
         }
         Err(err) => panic!("An error occured: {:?}",err)
     }
+
+    println!("{:?}", rust_multicodec::codec::CodecType::JSON.hex());
 }

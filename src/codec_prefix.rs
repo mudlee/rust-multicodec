@@ -1,6 +1,5 @@
 use std::io::Write;
 use integer_encoding::VarInt;
-use codec_map;
 use codec::CodecType;
 
 /// Returns the data prefixed with the codec's code in a u8 buffer.
@@ -30,20 +29,15 @@ use codec::CodecType;
 /// ```
 ///
 pub fn add(codec: CodecType, data: &[u8]) -> Result<Vec<u8>, &'static str> {
-    match codec_map::get_hex_by_code(codec) { // getting hex code of the codec
-        Some(decimal) => {
-            // encoding codec's (as decimal) into a varint
-            let mut target:Vec<u8>=decimal.encode_var_vec();
+    // encoding codec's (as decimal) into a varint
+    let mut target: Vec<u8> = codec.hex().encode_var_vec();
 
-            match target.write(data) {
-                Err(_) => return Err("Could not write data into the result buffer"),
-                _=> ()
-            }
-
-            Ok(target)
-        }
-        None => Err("No implementation for the given codec")
+    match target.write(data) {
+        Err(_) => return Err("Could not write data into the result buffer"),
+        _ => ()
     }
+
+    Ok(target)
 }
 
 /// Returns the codec's code the data was prefixed with.
@@ -74,7 +68,7 @@ pub fn add(codec: CodecType, data: &[u8]) -> Result<Vec<u8>, &'static str> {
 ///
 pub fn get(data: &[u8]) -> Option<CodecType>{
     let decoded:(u64,usize)=u64::decode_var_vec(&Vec::from(data));
-    codec_map::get_code_by_hex(decoded.0)
+    CodecType::by_hex(decoded.0)
 }
 
 /// Removes the codec prefix and returns the raw data.

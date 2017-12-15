@@ -14,7 +14,6 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 
 pub mod codec_prefix;
-pub mod codec_map;
 pub mod codec;
 
 pub struct DecodeResult<T> {
