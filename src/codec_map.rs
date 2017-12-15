@@ -1,9 +1,11 @@
-pub fn get_code_by_hex(hex: u64) -> Option<&'static str> {
+use codec::CodecType;
+
+pub fn get_code_by_hex(hex: u64) -> Option<CodecType> {
     match hex {
         // non standard multicodec formats, see: https://github.com/multiformats/multicodec/issues/36
-        0xf01 => Some("json"),
-        // standard formats
-        0x01 => Some("base1"),
+        0xf01 => Some(CodecType::JSON),
+        // standard formats - TODO
+        /*0x01 => Some("base1"),
         0x55 => Some("base2"),
         0x07 => Some("base8"),
         0x09 => Some("base10"),
@@ -161,17 +163,17 @@ pub fn get_code_by_hex(hex: u64) -> Option<&'static str> {
         0xd1 => Some("stellar-tx"),
         0x7b => Some("torrent-info"),
         0x7c => Some("torrent-file"),
-        0xed => Some("ed25519-pub"),
+        0xed => Some("ed25519-pub"),*/
         _ => None
     }
 }
 
-pub fn get_hex_by_code(codec_code:&str) -> Option<u64>{
-    match codec_code {
+pub fn get_hex_by_code(codec:CodecType) -> Option<u64>{
+    match codec {
         // non standard multicodec formats, see: https://github.com/multiformats/multicodec/issues/36
-        "json"=>Some(0xf01),
-        // standard formats
-        "base1" => Some(0x01),
+        CodecType::JSON=>Some(0xf01)
+        // standard formats - TODO
+        /*"base1" => Some(0x01),
         "base2" => Some(0x55),
         "base8" => Some(0x07),
         "base10" => Some(0x09),
@@ -329,7 +331,6 @@ pub fn get_hex_by_code(codec_code:&str) -> Option<u64>{
         "stellar-tx" => Some(0xd1),
         "torrent-info" => Some(0x7b),
         "torrent-file" => Some(0x7c),
-        "ed25519-pub" => Some(0xed),
-        _ => None
+        "ed25519-pub" => Some(0xed),*/
     }
 }

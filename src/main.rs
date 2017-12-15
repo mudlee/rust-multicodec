@@ -2,8 +2,6 @@ extern crate rust_multicodec;
 extern crate serde;
 extern crate serde_json;
 
-use rust_multicodec::encoding;
-use rust_multicodec::encoding::Codec;
 use std::str;
 
 #[macro_use]
@@ -18,9 +16,18 @@ struct Person {
 /// Working demo
 fn main(){
     let to_be_encoded=Person{name:String::from("sanyi")};
-    let encode_result= encoding::encode(Codec::JSON, &to_be_encoded);
-    println!("encoded: {:?}",encode_result);
+    match rust_multicodec::encode(rust_multicodec::codec::CodecType::JSON, &to_be_encoded) {
+        Ok(encoded) => {
+            println!("encoded: {:?}",encoded);
 
-    let decoded:Person=encoding::decode(encode_result.unwrap().as_ref()).unwrap().data;
-    println!("decoded: {:?}",decoded);
+            match rust_multicodec::decode(encoded.as_ref()) {
+                Ok(decode_result) => {
+                    let decoded:Person=decode_result.data;
+                    println!("decoded: {:?}",decoded);
+                },
+                Err(err) => panic!("An error occured: {:?}",err)
+            }
+        }
+        Err(err) => panic!("An error occured: {:?}",err)
+    }
 }

@@ -1,6 +1,7 @@
 use std::io::Write;
 use integer_encoding::VarInt;
-use encoding::codec_map;
+use codec_map;
+use codec::CodecType;
 
 /// Returns the data prefixed with the codec's code in a u8 buffer.
 ///
@@ -15,20 +16,21 @@ use encoding::codec_map;
 /// extern crate rust_multicodec;
 /// extern crate hex_slice;
 ///
-/// use rust_multicodec::encoding::codec;
+/// use rust_multicodec::codec_prefix;
+/// use rust_multicodec::codec::CodecType;
 /// use hex_slice::AsHex;
 /// use std::process;
 ///
 /// fn main(){
 ///     let data="Live long and prosper";
 ///
-///     println!("{:X}",codec::add_prefix("base1",data.as_bytes()).unwrap().as_hex());
+///     println!("{:X}",codec_prefix::add(CodecType::JSON,data.as_bytes()).unwrap().as_hex());
 ///     // it will print [1 4C 69 76 65 20 6C 6F 6E 67 20 61 6E 64 20 70 72 6F 73 70 65 72]
 /// }
 /// ```
 ///
-pub fn add_prefix(codec_code: &str, data: &[u8]) -> Result<Vec<u8>, &'static str> {
-    match codec_map::get_hex_by_code(codec_code) { // getting hex code of the codec
+pub fn add(codec: CodecType, data: &[u8]) -> Result<Vec<u8>, &'static str> {
+    match codec_map::get_hex_by_code(codec) { // getting hex code of the codec
         Some(decimal) => {
             // encoding codec's (as decimal) into a varint
             let mut target:Vec<u8>=decimal.encode_var_vec();
@@ -56,20 +58,21 @@ pub fn add_prefix(codec_code: &str, data: &[u8]) -> Result<Vec<u8>, &'static str
 /// extern crate rust_multicodec;
 /// extern crate hex_slice;
 ///
-/// use rust_multicodec::encoding::codec;
+/// use rust_multicodec::codec_prefix;
+/// use rust_multicodec::codec::CodecType;
 /// use hex_slice::AsHex;
 /// use std::process;
 ///
 /// fn main(){
 ///     let data="Live long and prosper";
 ///
-///     let prefixed=codec::add_prefix("base1",data.as_bytes()).unwrap();
-///     println!("{}",codec::get_codec(prefixed.as_slice()).unwrap());
-///     // it will print "base1"
+///     let prefixed=codec_prefix::add(CodecType::JSON,data.as_bytes()).unwrap();
+///     println!("{:?}",codec_prefix::get(prefixed.as_slice()).unwrap());
+///     // it will print "JSON"
 /// }
 /// ```
 ///
-pub fn get_codec(data: &[u8]) -> Option<&'static str>{
+pub fn get(data: &[u8]) -> Option<CodecType>{
     let decoded:(u64,usize)=u64::decode_var_vec(&Vec::from(data));
     codec_map::get_code_by_hex(decoded.0)
 }
@@ -86,21 +89,22 @@ pub fn get_codec(data: &[u8]) -> Option<&'static str>{
 /// extern crate rust_multicodec;
 /// extern crate hex_slice;
 ///
-/// use rust_multicodec::encoding::codec;
+/// use rust_multicodec::codec_prefix;
+/// use rust_multicodec::codec::CodecType;
 /// use hex_slice::AsHex;
 /// use std::process;
 ///
 /// fn main(){
 ///     let data="Live long and prosper";
 ///
-///     let prefixed=codec::add_prefix("base1",data.as_bytes()).unwrap();
-///     let raw_data=codec::remove_prefix(prefixed.as_slice()).unwrap();
+///     let prefixed=codec_prefix::add(CodecType::JSON,data.as_bytes()).unwrap();
+///     let raw_data=codec_prefix::remove(prefixed.as_slice()).unwrap();
 ///     println!("Original data was {:?}", String::from_utf8(raw_data).unwrap())
 ///     // it will print return "Original data was Live long and prosper"
 /// }
 /// ```
 ///
-pub fn remove_prefix(data:&[u8]) -> Result<Vec<u8>, &'static str>{
+pub fn remove(data:&[u8]) -> Result<Vec<u8>, &'static str>{
     let decoded:(u64,usize)=u64::decode_var_vec(&Vec::from(data));
     Ok(data[decoded.1..].to_vec())
 }
@@ -113,17 +117,11 @@ mod tests {
 
     #[test]
     fn prefix_works(){
-        let result=add_prefix("utp",DATA.as_bytes());
+        let result=add(CodecType::JSON,DATA.as_bytes());
         assert_eq!(result.is_ok(),true);
 
         let prefixed=result.unwrap();
-        assert_eq!(get_codec(prefixed.as_slice()).unwrap(),"utp");
-        assert_eq!(remove_prefix(prefixed.as_slice()).unwrap(),DATA.as_bytes());
-    }
-
-    #[test]
-    #[should_panic]
-    fn prefix_fails_with_invalid_codec(){
-        add_prefix("invalid_codec",DATA.as_bytes()).unwrap();
+        assert_eq!(get(prefixed.as_slice()).unwrap(),CodecType::JSON);
+        assert_eq!(remove(prefixed.as_slice()).unwrap(),DATA.as_bytes());
     }
 }
