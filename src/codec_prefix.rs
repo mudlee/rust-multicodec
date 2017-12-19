@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::io::{Write, Error};
 use integer_encoding::VarInt;
 use codec::CodecType;
 
@@ -6,7 +6,7 @@ use codec::CodecType;
 ///
 /// # Arguments
 ///
-/// * `codec_code` - The codec code, eg. 'base1'
+/// * `codec_code` - The codec type, eg. CodecType::JSON
 /// * `data` - the data to be prefixed
 ///
 /// # Example
@@ -28,15 +28,10 @@ use codec::CodecType;
 /// }
 /// ```
 ///
-pub fn add(codec: CodecType, data: &[u8]) -> Result<Vec<u8>, &'static str> {
+pub fn add(codec: CodecType, data: &[u8]) -> Result<Vec<u8>, Error> {
     // encoding codec's (as decimal) into a varint
     let mut target: Vec<u8> = codec.hex().encode_var_vec();
-
-    match target.write(data) {
-        Err(_) => return Err("Could not write data into the result buffer"),
-        _ => ()
-    }
-
+    target.write(data)?;
     Ok(target)
 }
 
@@ -92,15 +87,15 @@ pub fn get(data: &[u8]) -> Option<CodecType>{
 ///     let data="Live long and prosper";
 ///
 ///     let prefixed=codec_prefix::add(CodecType::JSON,data.as_bytes()).unwrap();
-///     let raw_data=codec_prefix::remove(prefixed.as_slice()).unwrap();
-///     println!("Original data was {:?}", String::from_utf8(raw_data).unwrap())
+///     let raw_data=codec_prefix::remove(prefixed.as_slice());
+///     println!("Original data was {:?}", String::from_utf8(raw_data.to_vec()).unwrap())
 ///     // it will print return "Original data was Live long and prosper"
 /// }
 /// ```
 ///
-pub fn remove(data:&[u8]) -> Result<Vec<u8>, &'static str>{
+pub fn remove<'a>(data: &'a [u8]) -> &'a [u8] {
     let decoded:(u64,usize)=u64::decode_var_vec(&Vec::from(data));
-    Ok(data[decoded.1..].to_vec())
+    &data[decoded.1..]
 }
 
 #[cfg(test)]
@@ -116,6 +111,6 @@ mod tests {
 
         let prefixed=result.unwrap();
         assert_eq!(get(prefixed.as_slice()).unwrap(),CodecType::JSON);
-        assert_eq!(remove(prefixed.as_slice()).unwrap(),DATA.as_bytes());
+        assert_eq!(remove(prefixed.as_slice()), DATA.as_bytes());
     }
 }
