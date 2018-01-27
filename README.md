@@ -16,11 +16,14 @@ Then run `cargo build`.
 ## Usage
 
 ### Encode / Decode
-```
+
+```Rust
 extern crate rust_multicodec;
 
 #[macro_use]
 extern crate serde_derive;
+
+use rust_multicodec::{codec, encode, decode};
 
 #[derive(Serialize)]
 #[derive(Debug)]
@@ -29,13 +32,13 @@ struct Person {
 }
 
 fn main(){
-    let to_be_encoded=Person{name:String::from("sanyi")};
-    let encoded=rust_multicodec::encode(rust_multicodec::codec::CodecType::JSON, &to_be_encoded).unwrap();
-    println!("{:?}",encoded);
+    let to_be_encoded = Person{ name: String::from("sanyi") };
+    let encoded = encode(codec::CodecType::JSON, &to_be_encoded).unwrap();
+    println!("{:?}", encoded);
     // it will print: Ok([129, 30, 123, 34, 110, 97, 109, 101, 34, 58, 34, 115, 97, 110, 121, 105, 34, 125])
     
-    let decoded:Person=rust_multicodec::decode(encoded.as_ref()).unwrap().data;
-    println!("{:?}",decoded);
+    let decoded: Person = decode(encoded.as_ref()).unwrap().data;
+    println!("{:?}", decoded);
     // it will print: Person { name: "sanyi" }
 }
 ```

@@ -18,7 +18,7 @@ pub mod codec;
 
 pub struct DecodeResult<T> {
     pub data: T,
-    pub codec: codec::CodecType
+    pub codec: codec::CodecType,
 }
 
 /// Returns the encoded object with a prefix of the given codec.
@@ -35,6 +35,7 @@ pub struct DecodeResult<T> {
 /// extern crate rust_multicodec;
 /// #[macro_use]
 /// extern crate serde_derive;
+/// use rust_multicodec::{codec, encode};
 /// #[derive(Serialize)]
 /// #[derive(Debug)]
 /// struct Person {
@@ -42,20 +43,28 @@ pub struct DecodeResult<T> {
 /// }
 ///
 /// fn main(){
-///     let to_be_encoded=Person{name:String::from("sanyi")};
-///     println!("{:?}",rust_multicodec::encode(rust_multicodec::codec::CodecType::JSON, &to_be_encoded));
-///     // it will print: Ok([129, 30, 123, 34, 110, 97, 109, 101, 34, 58, 34, 115, 97, 110, 121, 105, 34, 125])
+///     let to_be_encoded = Person{ name: String::from("sanyi") };
+///     println!("{:?}", encode(codec::CodecType::JSON, &to_be_encoded));
+///     // it will print: Ok([129, 30, 123, 34, 110, 97, 109, 101, 34, 58, 34, 115, 97, 110, ...])
 /// }
 /// ```
 ///
 pub fn encode<T: Serialize>(codec: codec::CodecType, object: &T) -> Result<Vec<u8>, String> {
     match codec {
         codec::CodecType::JSON => {
-            match serde_json::to_string(&object){
-                Ok(json) => codec_prefix::add(codec, json.as_bytes()).map_err(|io_error| -> String {
-                    format!("Could not add prefix to the given object. Error: {:?}", io_error.kind())
-                }),
-                Err(err) => Err(format!("Could not serialize the given object. Serde error: {:?}", err))
+            match serde_json::to_string(&object) {
+                Ok(json) => {
+                    codec_prefix::add(codec, json.as_bytes()).map_err(|io_error| -> String {
+                        format!(
+                            "Could not add prefix to the given object. Error: {:?}",
+                            io_error.kind()
+                        )
+                    })
+                }
+                Err(err) => Err(format!(
+                    "Could not serialize the given object. Serde error: {:?}",
+                    err
+                )),
             }
         }
     }
@@ -74,6 +83,7 @@ pub fn encode<T: Serialize>(codec: codec::CodecType, object: &T) -> Result<Vec<u
 /// extern crate rust_multicodec;
 /// #[macro_use]
 /// extern crate serde_derive;
+/// use rust_multicodec::{codec, encode, decode};
 /// #[derive(Serialize, Deserialize)]
 /// #[derive(Debug)]
 /// struct Person {
@@ -81,25 +91,33 @@ pub fn encode<T: Serialize>(codec: codec::CodecType, object: &T) -> Result<Vec<u
 /// }
 ///
 /// fn main(){
-///     let to_be_encoded=Person{name:String::from("sanyi")};
-///     let encoded=rust_multicodec::encode(rust_multicodec::codec::CodecType::JSON, &to_be_encoded).unwrap();
-///     let decoded:Person=rust_multicodec::decode(encoded.as_ref()).unwrap().data;
-///     println!("{:?}",decoded);
+///     let to_be_encoded = Person { name: String::from("sanyi") };
+///     let encoded = encode(codec::CodecType::JSON, &to_be_encoded).unwrap();
+///     let decoded: Person = decode(encoded.as_ref()).unwrap().data;
+///     println!("{:?}", decoded);
 ///     // it will print: Person { name: "sanyi" }
 /// }
 /// ```
 ///
 pub fn decode<T: DeserializeOwned>(encoded_data: &[u8]) -> Result<DecodeResult<T>, String> {
-    match codec_prefix::get(encoded_data){
-        Some(codec::CodecType::JSON)=>{
+    match codec_prefix::get(encoded_data) {
+        Some(codec::CodecType::JSON) => {
             let wout_prefix = codec_prefix::remove(encoded_data);
 
             match serde_json::from_slice(wout_prefix) {
-                Ok(data) => Ok(DecodeResult { codec: codec::CodecType::JSON, data }),
-                Err(err) => Err(format!("Could not deserialize the given data. Serde error: {:?}", err))
+                Ok(data) => Ok(DecodeResult {
+                    codec: codec::CodecType::JSON,
+                    data,
+                }),
+                Err(err) => Err(format!(
+                    "Could not deserialize the given data. Serde error: {:?}",
+                    err
+                )),
             }
-        },
-        None => Err(String::from("Could not deserialize the given data, the codec at the beginning is unknown"))
+        }
+        None => Err(String::from(
+            "Could not deserialize the given data, the codec at the beginning is unknown",
+        )),
     }
 }
 
@@ -109,17 +127,17 @@ mod tests {
 
     #[derive(Serialize, Deserialize)]
     struct TestObject {
-        message: String
+        message: String,
     }
 
     #[test]
-    fn encoding_decoding_works(){
-        let test_object=TestObject{message:String::from("Live long and prosper")};
-        let encoded=encode(codec::CodecType::JSON, &test_object);
-        assert_eq!(encoded.is_ok(),true);
+    fn encoding_decoding_works() {
+        let test_object = TestObject { message: String::from("Live long and prosper") };
+        let encoded = encode(codec::CodecType::JSON, &test_object);
+        assert_eq!(encoded.is_ok(), true);
 
-        let decoded:DecodeResult<TestObject>=decode(encoded.unwrap().as_ref()).unwrap();
+        let decoded: DecodeResult<TestObject> = decode(encoded.unwrap().as_ref()).unwrap();
         assert_eq!(decoded.data.message, test_object.message);
-        assert_eq!(decoded.codec,codec::CodecType::JSON);
+        assert_eq!(decoded.codec, codec::CodecType::JSON);
     }
 }
