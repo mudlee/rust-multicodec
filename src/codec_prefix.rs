@@ -23,7 +23,7 @@ use codec::CodecType;
 /// fn main(){
 ///     let data="Live long and prosper";
 ///
-///     println!("{:X}",codec_prefix::add(CodecType::JSON,data.as_bytes()).unwrap().as_hex());
+///     println!("{:X}", codec_prefix::add(CodecType::JSON,data.as_bytes()).unwrap().as_hex());
 ///     // it will print [1 4C 69 76 65 20 6C 6F 6E 67 20 61 6E 64 20 70 72 6F 73 70 65 72]
 /// }
 /// ```
@@ -53,16 +53,16 @@ pub fn add(codec: CodecType, data: &[u8]) -> Result<Vec<u8>, Error> {
 /// use std::process;
 ///
 /// fn main(){
-///     let data="Live long and prosper";
+///     let data = "Live long and prosper";
 ///
-///     let prefixed=codec_prefix::add(CodecType::JSON,data.as_bytes()).unwrap();
-///     println!("{:?}",codec_prefix::get(prefixed.as_slice()).unwrap());
+///     let prefixed = codec_prefix::add(CodecType::JSON,data.as_bytes()).unwrap();
+///     println!("{:?}", codec_prefix::get(prefixed.as_slice()).unwrap());
 ///     // it will print "JSON"
 /// }
 /// ```
 ///
-pub fn get(data: &[u8]) -> Option<CodecType>{
-    let decoded:(u64,usize)=u64::decode_var_vec(&Vec::from(data));
+pub fn get(data: &[u8]) -> Option<CodecType> {
+    let decoded: (u64, usize) = u64::decode_var_vec(&Vec::from(data));
     CodecType::by_hex(decoded.0)
 }
 
@@ -86,15 +86,15 @@ pub fn get(data: &[u8]) -> Option<CodecType>{
 /// fn main(){
 ///     let data="Live long and prosper";
 ///
-///     let prefixed=codec_prefix::add(CodecType::JSON,data.as_bytes()).unwrap();
-///     let raw_data=codec_prefix::remove(prefixed.as_slice());
+///     let prefixed = codec_prefix::add(CodecType::JSON,data.as_bytes()).unwrap();
+///     let raw_data = codec_prefix::remove(prefixed.as_slice());
 ///     println!("Original data was {:?}", String::from_utf8(raw_data.to_vec()).unwrap())
 ///     // it will print return "Original data was Live long and prosper"
 /// }
 /// ```
 ///
 pub fn remove<'a>(data: &'a [u8]) -> &'a [u8] {
-    let decoded:(u64,usize)=u64::decode_var_vec(&Vec::from(data));
+    let decoded: (u64, usize) = u64::decode_var_vec(&Vec::from(data));
     &data[decoded.1..]
 }
 
@@ -102,15 +102,15 @@ pub fn remove<'a>(data: &'a [u8]) -> &'a [u8] {
 mod tests {
     use super::*;
 
-    const DATA:&str="Live long and prosper";
+    const DATA: &str = "Live long and prosper";
 
     #[test]
-    fn prefix_works(){
-        let result=add(CodecType::JSON,DATA.as_bytes());
-        assert_eq!(result.is_ok(),true);
+    fn prefix_works() {
+        let result = add(CodecType::JSON, DATA.as_bytes());
+        assert_eq!(result.is_ok(), true);
 
-        let prefixed=result.unwrap();
-        assert_eq!(get(prefixed.as_slice()).unwrap(),CodecType::JSON);
+        let prefixed = result.unwrap();
+        assert_eq!(get(prefixed.as_slice()).unwrap(), CodecType::JSON);
         assert_eq!(remove(prefixed.as_slice()), DATA.as_bytes());
     }
 }
